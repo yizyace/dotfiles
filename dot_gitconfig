@@ -1,0 +1,54 @@
+[user]
+	name = Ace Yizy
+	email = yizyace@gmail.com
+[filter "media"]
+	required = true
+	clean = git media clean %f
+	smudge = git media smudge %f
+[heroku]
+	account = work
+[core]
+	editor = vim
+[credential]
+	helper = osxkeychain
+[filter "hawser"]
+	clean = git hawser clean %f
+	smudge = git hawser smudge %f
+	required = true
+[filter "lfs"]
+	clean = git lfs clean %f
+	smudge = git lfs smudge %f
+  required = true
+[diff]
+  tool = vimdiff
+[alias]
+  conflicts = diff --name-only --diff-filter=U
+  ac = !git add -A && git commit -m
+  cm = commit
+  co = checkout
+  cob = checkout -b
+  ec = config --global -e
+  wipe = !git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
+  lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+  lgo = log --oneline tack = commit -a --amend st = status
+  tack = commit -a --amend
+  st = status
+  dt = difftool
+  br = branch -a
+  qq = !git st | fpp -nfc
+  g = grep --break --heading --line-number
+  search = grep -Ii
+  logsearch = log --grep
+	branches = !legit branches
+	graft = !legit graft
+	harvest = !legit harvest
+	publish = !legit publish
+	unpublish = !legit unpublish
+	sprout = !legit sprout
+	sync = !legit sync
+	switch = !legit switch
+	resync = !legit resync
+[merge]
+	tool = vimdiff
+[push]
+	default = simple
