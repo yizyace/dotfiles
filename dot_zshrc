@@ -258,4 +258,7 @@ ssm-ssh() {
     --profile "$profile"
 }
 
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+export GEOS_LIBRARY_PATH=/opt/homebrew/lib
+export GEOS_INCLUDE_PATH=/opt/homebrew/include
+export PATH="$HOME/.local/bin:$PATH"
+
