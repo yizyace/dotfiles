@@ -258,3 +258,4 @@ ssm-ssh() {
     --profile "$profile"
 }
 
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
