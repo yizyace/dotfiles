@@ -13,6 +13,7 @@ gg() {
     st) cmd="status" ;;                       # show working tree status
     br) cmd="branch"; set -- -a "$@" ;;       # list all branches
     dt) cmd="difftool" ;;                     # open diff in external tool
+    tack) cmd="commit"; set -- -a --amend "$@" ;;  # amend with all changes
   esac
 
   # Custom commands
