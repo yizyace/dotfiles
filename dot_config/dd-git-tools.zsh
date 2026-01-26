@@ -7,7 +7,6 @@ gg() {
 
   # Aliases (expand before processing)
   case "$cmd" in
-    co) cmd="checkout" ;;                     # checkout
     cob) cmd="checkout"; set -- -b "$@" ;;    # create and switch to new branch
     cm) cmd="commit" ;;                       # commit staged changes
     st) cmd="status" ;;                       # show working tree status
@@ -25,7 +24,6 @@ gg() {
 gg - git wrapper with shortcuts
 
 ALIASES (expand to git commands):
-  co        checkout
   cob       checkout -b (create and switch to new branch)
   cm        commit
   st        status
@@ -36,6 +34,7 @@ ALIASES (expand to git commands):
   lgo       log --oneline
 
 CUSTOM COMMANDS:
+  co <branch>    checkout (auto-cd to worktree if branch checked out there)
   recent [n]     Show last n branches visited (default: 10)
   conflicts      List files with merge conflicts
   g <pattern>    Grep with nice formatting
@@ -50,6 +49,26 @@ CUSTOM COMMANDS:
 All other commands are passed to git.
 HELP
       return
+      ;;
+    co)
+      local output
+      output=$(git checkout "$@" 2>&1)
+      local rc=$?
+      # Handle both old ("already checked out at") and new ("already used by worktree at") git messages
+      if [[ $rc -ne 0 && ("$output" == *"already checked out at '"* || "$output" == *"already used by worktree at '"*) ]]; then
+        local wt_path
+        if [[ "$output" == *"already checked out at '"* ]]; then
+          wt_path=${output##*already checked out at \'}
+        else
+          wt_path=${output##*already used by worktree at \'}
+        fi
+        wt_path=${wt_path%\'}
+        echo "Branch is in worktree: $wt_path"
+        cd "$wt_path"
+      else
+        [[ -n "$output" ]] && echo "$output"
+        return $rc
+      fi
       ;;
     recent)
       local n="${1:-10}"
