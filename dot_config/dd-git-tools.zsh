@@ -44,7 +44,6 @@ CUSTOM COMMANDS:
   ec             Edit local git config
   egc            Edit global git config
   ac <msg>       Stage all and commit with message
-  wipe           Create savepoint, then reset hard
   checkpoint     Create WIP commit and switch to dated checkpoint branch
   qq             Interactive file picker for status
 
@@ -140,10 +139,6 @@ HELP
       ;;
     ac)
       git add -A && git commit -m "$*"
-      return
-      ;;
-    wipe)
-      git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
       return
       ;;
     checkpoint)
