@@ -39,15 +39,6 @@
   g = grep --break --heading --line-number
   search = grep -Ii
   logsearch = log --grep
-	branches = !legit branches
-	graft = !legit graft
-	harvest = !legit harvest
-	publish = !legit publish
-	unpublish = !legit unpublish
-	sprout = !legit sprout
-	sync = !legit sync
-	switch = !legit switch
-	resync = !legit resync
 [merge]
 	tool = vimdiff
 [push]
