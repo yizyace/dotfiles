@@ -64,6 +64,10 @@ HELP
       git grep --break --heading -n "$@"
       return
       ;;
+    search)
+      git grep -Ii "$@"
+      return
+      ;;
   esac
 
   # Default: delegate to git
