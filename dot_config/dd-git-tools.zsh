@@ -45,6 +45,7 @@ CUSTOM COMMANDS:
   egc            Edit global git config
   ac <msg>       Stage all and commit with message
   wipe           Create savepoint, then reset hard
+  checkpoint     Create WIP commit and switch to dated checkpoint branch
   qq             Interactive file picker for status
 
 All other commands are passed to git.
@@ -143,6 +144,51 @@ HELP
       ;;
     wipe)
       git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
+      return
+      ;;
+    checkpoint)
+      # Verify we're on a branch
+      local current_branch
+      current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+      if [[ -z "$current_branch" ]]; then
+        echo "Error: Cannot checkpoint from detached HEAD state" >&2
+        return 1
+      fi
+
+      # Check for changes (staged, unstaged, or untracked)
+      if git diff --quiet && git diff --cached --quiet && [[ -z "$(git ls-files --others --exclude-standard)" ]]; then
+        echo "No changes to checkpoint" >&2
+        return 1
+      fi
+
+      # Create WIP commit
+      git add -A && git commit -m "WIP"
+
+      # Generate checkpoint branch name
+      local date_prefix
+      date_prefix=$(date +%y%m%d)
+
+      # Extract base branch (handle checkpointing from a checkpoint branch)
+      local base_branch="$current_branch"
+      if [[ "$current_branch" == checkpoints/* ]]; then
+        # Extract date and original branch from: checkpoints/YYMMDD/original-branch/N
+        date_prefix=$(echo "$current_branch" | cut -d'/' -f2)
+        base_branch=$(echo "$current_branch" | cut -d'/' -f3- | sed 's:/[0-9]*$::')
+      fi
+
+      # Find next checkpoint number (max existing + 1, not count + 1)
+      local max_num=0
+      local branches
+      branches=$(git branch --list "checkpoints/${date_prefix}/${base_branch}/*")
+      if [[ -n "$branches" ]]; then
+        max_num=$(echo "$branches" | sed 's:.*/::' | sort -n | tail -1)
+      fi
+      local next_num=$((max_num + 1))
+
+      local checkpoint_branch="checkpoints/${date_prefix}/${base_branch}/${next_num}"
+
+      git checkout -b "$checkpoint_branch"
+      echo "Created checkpoint: $checkpoint_branch"
       return
       ;;
     qq)
