@@ -208,9 +208,12 @@ if [[ -n "$ZSH_VERSION" ]]; then
     if (( CURRENT == 2 )); then
       # First argument: complete gg commands + git commands
       _describe 'gg command' gg_commands
-      _git  # Fall back to git completion
+      # Pretend we're completing 'git' to avoid _git recursing back to _gg
+      words[1]=git
+      _git
     else
       # Subsequent arguments: use git completion
+      words[1]=git
       _git
     fi
   }
