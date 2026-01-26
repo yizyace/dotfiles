@@ -76,6 +76,10 @@ HELP
       git config -e
       return
       ;;
+    egc)
+      git config --global -e
+      return
+      ;;
   esac
 
   # Default: delegate to git
