@@ -195,3 +195,24 @@ HELP
   # Default: delegate to git
   git "$cmd" "$@"
 }
+
+# Zsh completion for gg (only load in zsh)
+if [[ -n "$ZSH_VERSION" ]]; then
+  _gg() {
+    local -a gg_commands
+
+    # Parse commands from help text (single source of truth)
+    # Matches lines like "  cmd       description" or "  cmd <arg>  description"
+    gg_commands=($(gg --help | awk '/^  [a-z]/ { print $1 }' | sort -u))
+
+    if (( CURRENT == 2 )); then
+      # First argument: complete gg commands + git commands
+      _describe 'gg command' gg_commands
+      _git  # Fall back to git completion
+    else
+      # Subsequent arguments: use git completion
+      _git
+    fi
+  }
+  compdef _gg gg
+fi
