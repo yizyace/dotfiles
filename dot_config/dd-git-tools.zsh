@@ -214,5 +214,5 @@ if [[ -n "$ZSH_VERSION" ]]; then
       _git
     fi
   }
-  compdef _gg gg
+  compdef _gg gg 2>/dev/null
 fi
