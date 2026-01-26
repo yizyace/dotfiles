@@ -9,6 +9,7 @@ gg() {
   case "$cmd" in
     co) cmd="checkout" ;;                     # checkout
     cob) cmd="checkout"; set -- -b "$@" ;;    # create and switch to new branch
+    cm) cmd="commit" ;;                       # commit staged changes
   esac
 
   # Custom commands
