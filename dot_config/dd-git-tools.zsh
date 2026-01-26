@@ -72,6 +72,10 @@ HELP
       git log --grep="$1" --oneline "${@:2}"
       return
       ;;
+    ec)
+      git config -e
+      return
+      ;;
   esac
 
   # Default: delegate to git
