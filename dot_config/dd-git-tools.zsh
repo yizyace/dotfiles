@@ -80,6 +80,10 @@ HELP
       git config --global -e
       return
       ;;
+    ac)
+      git add -A && git commit -m "$*"
+      return
+      ;;
   esac
 
   # Default: delegate to git
