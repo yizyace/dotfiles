@@ -15,6 +15,7 @@ gg() {
     dt) cmd="difftool" ;;                     # open diff in external tool
     tack) cmd="commit"; set -- -a --amend "$@" ;;  # amend with all changes
     lg) cmd="log"; set -- --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit "$@" ;;  # pretty log with graph
+    lgo) cmd="log"; set -- --oneline "$@" ;;  # compact one-line log
   esac
 
   # Custom commands
