@@ -36,6 +36,7 @@ ALIASES (expand to git commands):
 CUSTOM COMMANDS:
   co <branch>    checkout (auto-cd to worktree if branch checked out there)
   recent [n]     Show last n branches visited (default: 10)
+  recent -i [n]  Interactive picker to checkout a recent branch (requires fzf)
   conflicts      List files with merge conflicts
   g <pattern>    Grep with nice formatting
   search <pat>   Case-insensitive grep
@@ -72,8 +73,44 @@ HELP
       fi
       ;;
     recent)
-      local n="${1:-10}"
-      git reflog show --pretty=format:'%gs' | grep 'checkout: moving' | sed 's/checkout: moving from .* to //' | awk '!seen[$0]++' | head -n "$n"
+      local interactive=0
+      local n=10
+
+      # Parse arguments
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          -i|--interactive) interactive=1; shift ;;
+          *) n="$1"; shift ;;
+        esac
+      done
+
+      # Get the list of recent branches
+      local branches
+      branches=$(git reflog show --pretty=format:'%gs' | grep 'checkout: moving' | sed 's/checkout: moving from .* to //' | awk '!seen[$0]++' | head -n "$n")
+
+      if [[ $interactive -eq 0 ]]; then
+        echo "$branches"
+        return
+      fi
+
+      # Interactive mode
+      if ! command -v fzf >/dev/null 2>&1; then
+        echo "Error: fzf is required for interactive mode but is not installed." >&2
+        echo "Install with: brew install fzf" >&2
+        echo "" >&2
+        echo "Falling back to list mode:" >&2
+        echo "$branches"
+        return 1
+      fi
+
+      local selected
+      selected=$(echo "$branches" | fzf --height=40% --reverse --border \
+        --header="Select branch (Enter=checkout, Esc=cancel)" \
+        --bind="j:down,k:up")
+
+      if [[ -n "$selected" ]]; then
+        gg co "$selected"
+      fi
       return
       ;;
     conflicts)
