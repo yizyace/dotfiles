@@ -88,6 +88,10 @@ HELP
       git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
       return
       ;;
+    qq)
+      git status | fpp -nfc
+      return
+      ;;
   esac
 
   # Default: delegate to git
