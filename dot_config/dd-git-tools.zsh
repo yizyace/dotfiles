@@ -56,6 +56,10 @@ HELP
       git reflog show --pretty=format:'%gs' | grep 'checkout: moving' | sed 's/checkout: moving from .* to //' | awk '!seen[$0]++' | head -n "$n"
       return
       ;;
+    conflicts)
+      git diff --name-only --diff-filter=U
+      return
+      ;;
   esac
 
   # Default: delegate to git
