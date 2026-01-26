@@ -11,6 +11,7 @@ gg() {
     cob) cmd="checkout"; set -- -b "$@" ;;    # create and switch to new branch
     cm) cmd="commit" ;;                       # commit staged changes
     st) cmd="status" ;;                       # show working tree status
+    br) cmd="branch"; set -- -a "$@" ;;       # list all branches
   esac
 
   # Custom commands
