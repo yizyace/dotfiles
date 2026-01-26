@@ -60,6 +60,10 @@ HELP
       git diff --name-only --diff-filter=U
       return
       ;;
+    g)
+      git grep --break --heading -n "$@"
+      return
+      ;;
   esac
 
   # Default: delegate to git
