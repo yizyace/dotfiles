@@ -65,6 +65,7 @@ HELP
         wt_path=${wt_path%\'}
         echo "Branch is in worktree: $wt_path"
         cd "$wt_path"
+        return
       else
         [[ -n "$output" ]] && echo "$output"
         return $rc
