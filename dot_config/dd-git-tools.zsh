@@ -68,6 +68,10 @@ HELP
       git grep -Ii "$@"
       return
       ;;
+    logsearch)
+      git log --grep="$1" --oneline "${@:2}"
+      return
+      ;;
   esac
 
   # Default: delegate to git
