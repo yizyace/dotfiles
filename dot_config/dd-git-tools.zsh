@@ -10,6 +10,7 @@ gg() {
     co) cmd="checkout" ;;                     # checkout
     cob) cmd="checkout"; set -- -b "$@" ;;    # create and switch to new branch
     cm) cmd="commit" ;;                       # commit staged changes
+    st) cmd="status" ;;                       # show working tree status
   esac
 
   # Custom commands
