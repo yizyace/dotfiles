@@ -20,7 +20,7 @@ setup_repo_with_worktree() {
   TEST_REPO=$(mktemp -d)
   TEST_WORKTREE=$(mktemp -d)
   cd "$TEST_REPO"
-  git init -q
+  git init -q -b main
   git config user.email "test@test.com"
   git config user.name "Test"
   echo "initial" > file.txt
