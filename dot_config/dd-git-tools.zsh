@@ -7,7 +7,8 @@ gg() {
 
   # Aliases (expand before processing)
   case "$cmd" in
-    co) cmd="checkout" ;;
+    co) cmd="checkout" ;;                     # checkout
+    cob) cmd="checkout"; set -- -b "$@" ;;    # create and switch to new branch
   esac
 
   # Custom commands
