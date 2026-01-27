@@ -199,21 +199,44 @@ HELP
 # Zsh completion for gg (only load in zsh)
 if [[ -n "$ZSH_VERSION" ]]; then
   _gg() {
-    local -a gg_commands
-
-    # Parse commands from help text (single source of truth)
-    # Matches lines like "  cmd       description" or "  cmd <arg>  description"
-    gg_commands=($(gg --help | awk '/^  [a-z]/ { print $1 }' | sort -u))
+    # gg-specific commands (hardcoded to avoid issues during completion)
+    local -a gg_commands=(
+      'co:checkout with auto-cd to worktree'
+      'cob:checkout -b (create branch)'
+      'cm:commit'
+      'st:status'
+      'br:branch -a'
+      'dt:difftool'
+      'tack:commit -a --amend'
+      'lg:log with graph'
+      'lgo:log --oneline'
+      'recent:show recent branches'
+      'conflicts:list conflict files'
+      'g:grep with formatting'
+      'search:case-insensitive grep'
+      'logsearch:search commit messages'
+      'ec:edit local config'
+      'egc:edit global config'
+      'ac:add all and commit'
+      'checkpoint:create WIP checkpoint'
+      'qq:interactive file picker'
+    )
 
     if (( CURRENT == 2 )); then
       # First argument: complete gg commands + git commands
       _describe 'gg command' gg_commands
-      # Pretend we're completing 'git' to avoid _git recursing back to _gg
+
+      # Delegate to git completion with fully rewritten context
+      # Must change words, service, AND curcontext to prevent recursion
       words[1]=git
+      service=git
+      curcontext="${curcontext/gg/git}"
       _git
     else
       # Subsequent arguments: use git completion
       words[1]=git
+      service=git
+      curcontext="${curcontext/gg/git}"
       _git
     fi
   }
