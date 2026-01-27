@@ -25,6 +25,7 @@ typeset -a GG_CUSTOM_COMMANDS=(
   'ac:add all and commit'
   'checkpoint:create WIP checkpoint'
   'qq:interactive file picker'
+  'forcepull:fetch and hard reset to upstream'
 )
 
 gg() {
@@ -198,6 +199,41 @@ gg() {
       ;;
     qq)
       git status | fpp -nfc
+      return
+      ;;
+    forcepull)
+      local current_branch
+      current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+      if [[ -z "$current_branch" ]]; then
+        echo "Error: Cannot forcepull in detached HEAD state" >&2
+        return 1
+      fi
+
+      local upstream
+      upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)
+      if [[ -z "$upstream" ]]; then
+        echo "Error: No upstream tracking branch configured for '$current_branch'" >&2
+        echo "Hint: run 'git branch --set-upstream-to=origin/$current_branch'" >&2
+        return 1
+      fi
+
+      local remote="${upstream%%/*}"
+
+      echo "Fetching from $remote..."
+      if ! git fetch "$remote" "$current_branch"; then
+        echo "Error: fetch from '$remote' failed" >&2
+        return 1
+      fi
+
+      # Save uncommitted changes to reflog via WIP commit
+      if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+        echo "Saving uncommitted changes as WIP commit..."
+        git add -A
+        git commit -qm "WIP (forcepull)"
+      fi
+
+      echo "Resetting '$current_branch' to '$upstream'..."
+      git reset --hard "$upstream"
       return
       ;;
   esac
