@@ -162,13 +162,15 @@ gg() {
       fi
 
       # Check for changes (staged, unstaged, or untracked)
-      if git diff --quiet && git diff --cached --quiet && [[ -z "$(git ls-files --others --exclude-standard)" ]]; then
-        echo "No changes to checkpoint" >&2
-        return 1
+      local has_changes=false
+      if ! git diff --quiet || ! git diff --cached --quiet || [[ -n "$(git ls-files --others --exclude-standard)" ]]; then
+        has_changes=true
       fi
 
-      # Create WIP commit
-      git add -A && git commit -m "WIP"
+      # Create WIP commit if there are changes
+      if [[ "$has_changes" = true ]]; then
+        git add -A && git commit -m "WIP"
+      fi
 
       # Generate checkpoint branch name
       local date_prefix
@@ -193,8 +195,12 @@ gg() {
 
       local checkpoint_branch="checkpoints/${date_prefix}/${base_branch}/${next_num}"
 
-      git checkout -b "$checkpoint_branch"
-      echo "Created checkpoint: $checkpoint_branch"
+      git branch "$checkpoint_branch"
+      if [[ "$has_changes" = true ]]; then
+        echo "Created checkpoint: $checkpoint_branch (with WIP commit)"
+      else
+        echo "Created checkpoint: $checkpoint_branch (no changes)"
+      fi
       return
       ;;
     qq)

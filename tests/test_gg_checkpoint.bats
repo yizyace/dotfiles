@@ -39,13 +39,15 @@ teardown_checkpoint_repo() {
   run gg checkpoint
   [ "$status" -eq 0 ]
   [[ "$output" =~ "Created checkpoint:" ]]
+  [[ "$output" =~ "(with WIP commit)" ]]
 
-  # Verify we're on a checkpoint branch
+  # Verify we're still on the original branch
   local current=$(git symbolic-ref --short HEAD)
-  [[ "$current" =~ ^checkpoints/ ]]
+  [ "$current" = "feature/test" ]
 
-  # Verify commit message is WIP
-  local msg=$(git log -1 --pretty=%s)
+  # Verify checkpoint branch exists and has the WIP commit
+  local today=$(date +%y%m%d)
+  local msg=$(git log -1 --pretty=%s "checkpoints/${today}/feature/test/1")
   [ "$msg" = "WIP" ]
 }
 
@@ -57,9 +59,14 @@ teardown_checkpoint_repo() {
   run gg checkpoint
   [ "$status" -eq 0 ]
 
-  local current=$(git symbolic-ref --short HEAD)
   local today=$(date +%y%m%d)
-  [ "$current" = "checkpoints/${today}/feature/test/1" ]
+  # Verify checkpoint branch exists
+  run git branch --list "checkpoints/${today}/feature/test/1"
+  [[ -n "$output" ]]
+
+  # Verify we're still on the original branch
+  local current=$(git symbolic-ref --short HEAD)
+  [ "$current" = "feature/test" ]
 }
 
 @test "checkpoint: includes staged files" {
@@ -71,8 +78,9 @@ teardown_checkpoint_repo() {
   run gg checkpoint
   [ "$status" -eq 0 ]
 
-  # Verify file is in the commit
-  run git show --name-only --pretty=format:'' HEAD
+  # Verify file is in the checkpoint branch's commit
+  local today=$(date +%y%m%d)
+  run git show --name-only --pretty=format:'' "checkpoints/${today}/feature/test/1"
   [[ "$output" =~ "staged.txt" ]]
 }
 
@@ -84,8 +92,9 @@ teardown_checkpoint_repo() {
   run gg checkpoint
   [ "$status" -eq 0 ]
 
-  # Verify file is in the commit
-  run git show --name-only --pretty=format:'' HEAD
+  # Verify file is in the checkpoint branch's commit
+  local today=$(date +%y%m%d)
+  run git show --name-only --pretty=format:'' "checkpoints/${today}/feature/test/1"
   [[ "$output" =~ "file.txt" ]]
 }
 
@@ -97,8 +106,9 @@ teardown_checkpoint_repo() {
   run gg checkpoint
   [ "$status" -eq 0 ]
 
-  # Verify file is in the commit
-  run git show --name-only --pretty=format:'' HEAD
+  # Verify file is in the checkpoint branch's commit
+  local today=$(date +%y%m%d)
+  run git show --name-only --pretty=format:'' "checkpoints/${today}/feature/test/1"
   [[ "$output" =~ "untracked.txt" ]]
 }
 
@@ -111,16 +121,13 @@ teardown_checkpoint_repo() {
   echo "first" > first.txt
   gg checkpoint
 
-  # Go back to original branch
-  git checkout -q feature/test
-
-  # Second checkpoint
+  # Second checkpoint (still on feature/test since checkpoint stays on original branch)
   echo "second" > second.txt
   gg checkpoint
 
-  # Verify we're on checkpoint 2
+  # Verify we're still on feature/test
   local current=$(git symbolic-ref --short HEAD)
-  [ "$current" = "checkpoints/${today}/feature/test/2" ]
+  [ "$current" = "feature/test" ]
 
   # Verify both checkpoint branches exist
   run git branch --list "checkpoints/${today}/feature/test/*"
@@ -129,17 +136,32 @@ teardown_checkpoint_repo() {
 }
 
 # =============================================================================
-# ERROR CASES
+# NO CHANGES CASE
 # =============================================================================
 
-@test "checkpoint: fails with no changes" {
+@test "checkpoint: with no changes creates branch at current commit" {
   cd "$TEST_REPO"
   git checkout -q -b feature/test
+  local today=$(date +%y%m%d)
 
   run gg checkpoint
-  [ "$status" -eq 1 ]
-  [[ "$output" =~ "No changes to checkpoint" ]]
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Created checkpoint:" ]]
+  [[ "$output" =~ "(no changes)" ]]
+
+  # Verify we're still on the original branch
+  local current=$(git symbolic-ref --short HEAD)
+  [ "$current" = "feature/test" ]
+
+  # Verify checkpoint branch exists and points at same commit
+  local orig_commit=$(git rev-parse feature/test)
+  local cp_commit=$(git rev-parse "checkpoints/${today}/feature/test/1")
+  [ "$orig_commit" = "$cp_commit" ]
 }
+
+# =============================================================================
+# ERROR CASES
+# =============================================================================
 
 @test "checkpoint: fails in detached HEAD state" {
   cd "$TEST_REPO"
@@ -164,9 +186,14 @@ teardown_checkpoint_repo() {
   run gg checkpoint
   [ "$status" -eq 0 ]
 
-  local current=$(git symbolic-ref --short HEAD)
   local today=$(date +%y%m%d)
-  [ "$current" = "checkpoints/${today}/ay/feat/featurea/1" ]
+  # Verify checkpoint branch exists
+  run git branch --list "checkpoints/${today}/ay/feat/featurea/1"
+  [[ -n "$output" ]]
+
+  # Verify we're still on original branch
+  local current=$(git symbolic-ref --short HEAD)
+  [ "$current" = "ay/feat/featurea" ]
 }
 
 @test "checkpoint: branches sort chronologically" {
@@ -197,9 +224,14 @@ teardown_checkpoint_repo() {
   run gg checkpoint
   [ "$status" -eq 0 ]
 
-  local current=$(git symbolic-ref --short HEAD)
   local today=$(date +%y%m%d)
-  [ "$current" = "checkpoints/${today}/main/1" ]
+  # Verify checkpoint branch exists
+  run git branch --list "checkpoints/${today}/main/1"
+  [[ -n "$output" ]]
+
+  # Verify we're still on main
+  local current=$(git symbolic-ref --short HEAD)
+  [ "$current" = "main" ]
 }
 
 @test "checkpoint: handles gap in numbering after deletion" {
@@ -209,21 +241,23 @@ teardown_checkpoint_repo() {
 
   # Create checkpoints 1, 2, 3
   echo "1" > f1.txt && gg checkpoint
-  git checkout -q feature/gap
   echo "2" > f2.txt && gg checkpoint
-  git checkout -q feature/gap
   echo "3" > f3.txt && gg checkpoint
 
   # Delete checkpoint 2
   git branch -D "checkpoints/${today}/feature/gap/2"
 
   # Create new checkpoint - should be 4, not 3
-  git checkout -q feature/gap
   echo "4" > f4.txt
   gg checkpoint
 
+  # Verify checkpoint 4 exists
+  run git branch --list "checkpoints/${today}/feature/gap/4"
+  [[ -n "$output" ]]
+
+  # Verify we're still on feature/gap
   local current=$(git symbolic-ref --short HEAD)
-  [ "$current" = "checkpoints/${today}/feature/gap/4" ]
+  [ "$current" = "feature/gap" ]
 }
 
 @test "checkpoint: from checkpoint branch increments N without nesting" {
@@ -235,11 +269,18 @@ teardown_checkpoint_repo() {
   echo "1" > m1.txt
   gg checkpoint
 
-  # Now on checkpoint branch, make more changes
+  # Switch to the checkpoint branch, make more changes
+  git checkout -q "checkpoints/${today}/feature/meta/1"
+  # Need to be on a named branch for checkpoint to work
+  # The checkpoint branch IS a named branch, so switch to it properly
+  git checkout "checkpoints/${today}/feature/meta/1"
   echo "2" > m2.txt
   gg checkpoint
 
-  # Should be /2, not nested
+  # Should be /2, not nested - and we stay on the checkpoint/1 branch
+  run git branch --list "checkpoints/${today}/feature/meta/2"
+  [[ -n "$output" ]]
+
   local current=$(git symbolic-ref --short HEAD)
-  [ "$current" = "checkpoints/${today}/feature/meta/2" ]
+  [ "$current" = "checkpoints/${today}/feature/meta/1" ]
 }
