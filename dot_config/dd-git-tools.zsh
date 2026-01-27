@@ -1,6 +1,32 @@
 # Remove oh-my-zsh git plugin's gg alias so we can define our function
 unalias gg 2>/dev/null
 
+# Command definitions - single source of truth for help and completion
+typeset -a GG_ALIASES=(
+  'cob:checkout -b (create branch)'
+  'cm:commit'
+  'st:status'
+  'br:branch -a'
+  'dt:difftool'
+  'tack:commit -a --amend'
+  'lg:log with graph'
+  'lgo:log --oneline'
+)
+
+typeset -a GG_CUSTOM_COMMANDS=(
+  'co:checkout with auto-cd to worktree'
+  'recent:show recent branches'
+  'conflicts:list conflict files'
+  'g:grep with formatting'
+  'search:case-insensitive grep'
+  'logsearch:search commit messages'
+  'ec:edit local config'
+  'egc:edit global config'
+  'ac:add all and commit'
+  'checkpoint:create WIP checkpoint'
+  'qq:interactive file picker'
+)
+
 gg() {
   local cmd="$1"
   shift 2>/dev/null
@@ -20,35 +46,19 @@ gg() {
   # Custom commands
   case "$cmd" in
     --help|-h|help)
-      cat <<'HELP'
-gg - git wrapper with shortcuts
-
-ALIASES (expand to git commands):
-  cob       checkout -b (create and switch to new branch)
-  cm        commit
-  st        status
-  br        branch -a (list all branches)
-  dt        difftool
-  tack      commit -a --amend (amend with all changes)
-  lg        log with graph and pretty format
-  lgo       log --oneline
-
-CUSTOM COMMANDS:
-  co <branch>    checkout (auto-cd to worktree if branch checked out there)
-  recent [n]     Show last n branches visited (default: 10)
-  recent -i [n]  Interactive picker to checkout a recent branch (requires fzf)
-  conflicts      List files with merge conflicts
-  g <pattern>    Grep with nice formatting
-  search <pat>   Case-insensitive grep
-  logsearch <p>  Search commit messages
-  ec             Edit local git config
-  egc            Edit global git config
-  ac <msg>       Stage all and commit with message
-  checkpoint     Create WIP commit and switch to dated checkpoint branch
-  qq             Interactive file picker for status
-
-All other commands are passed to git.
-HELP
+      echo "gg - git wrapper with shortcuts"
+      echo ""
+      echo "ALIASES (expand to git commands):"
+      for spec in "${GG_ALIASES[@]}"; do
+        printf "  %-10s%s\n" "${spec%%:*}" "${spec#*:}"
+      done
+      echo ""
+      echo "CUSTOM COMMANDS:"
+      for spec in "${GG_CUSTOM_COMMANDS[@]}"; do
+        printf "  %-14s%s\n" "${spec%%:*}" "${spec#*:}"
+      done
+      echo ""
+      echo "All other commands are passed to git."
       return
       ;;
     co)
@@ -199,21 +209,24 @@ HELP
 # Zsh completion for gg (only load in zsh)
 if [[ -n "$ZSH_VERSION" ]]; then
   _gg() {
-    local -a gg_commands
-
-    # Parse commands from help text (single source of truth)
-    # Matches lines like "  cmd       description" or "  cmd <arg>  description"
-    gg_commands=($(gg --help | awk '/^  [a-z]/ { print $1 }' | sort -u))
+    # Build completion array from shared metadata
+    local -a gg_commands=("${GG_ALIASES[@]}" "${GG_CUSTOM_COMMANDS[@]}")
 
     if (( CURRENT == 2 )); then
       # First argument: complete gg commands + git commands
       _describe 'gg command' gg_commands
-      # Pretend we're completing 'git' to avoid _git recursing back to _gg
+
+      # Delegate to git completion with fully rewritten context
+      # Must change words, service, AND curcontext to prevent recursion
       words[1]=git
+      service=git
+      curcontext="${curcontext/gg/git}"
       _git
     else
       # Subsequent arguments: use git completion
       words[1]=git
+      service=git
+      curcontext="${curcontext/gg/git}"
       _git
     fi
   }
