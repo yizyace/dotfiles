@@ -103,21 +103,28 @@ teardown() {
 # =============================================================================
 
 @test "completion: gg commands include expected commands" {
-  # Verify gg_commands array contains expected commands
+  # Verify GG_ALIASES and GG_CUSTOM_COMMANDS arrays exist and contain expected commands
 
   run zsh -c '
     source "'"${BATS_TEST_DIRNAME}"'/../dot_config/dd-git-tools.zsh"
 
-    # Check that _gg contains expected commands in hardcoded list
-    func_body=$(functions _gg)
-    echo "$func_body" | grep -q "co:" && echo "has_co=yes" || echo "has_co=no"
-    echo "$func_body" | grep -q "recent:" && echo "has_recent=yes" || echo "has_recent=no"
-    echo "$func_body" | grep -q "checkpoint:" && echo "has_checkpoint=yes" || echo "has_checkpoint=no"
+    # Check that the shared arrays exist and contain expected commands
+    [[ -n "$GG_ALIASES" ]] && echo "has_aliases=yes" || echo "has_aliases=no"
+    [[ -n "$GG_CUSTOM_COMMANDS" ]] && echo "has_custom=yes" || echo "has_custom=no"
+
+    # Check for specific commands in the arrays
+    [[ "${GG_CUSTOM_COMMANDS[*]}" == *"co:"* ]] && echo "has_co=yes" || echo "has_co=no"
+    [[ "${GG_CUSTOM_COMMANDS[*]}" == *"recent:"* ]] && echo "has_recent=yes" || echo "has_recent=no"
+    [[ "${GG_CUSTOM_COMMANDS[*]}" == *"checkpoint:"* ]] && echo "has_checkpoint=yes" || echo "has_checkpoint=no"
+    [[ "${GG_ALIASES[*]}" == *"cob:"* ]] && echo "has_cob=yes" || echo "has_cob=no"
   '
 
+  [[ "$output" =~ "has_aliases=yes" ]]
+  [[ "$output" =~ "has_custom=yes" ]]
   [[ "$output" =~ "has_co=yes" ]]
   [[ "$output" =~ "has_recent=yes" ]]
   [[ "$output" =~ "has_checkpoint=yes" ]]
+  [[ "$output" =~ "has_cob=yes" ]]
 }
 
 @test "completion: curcontext is updated to git context" {
