@@ -229,47 +229,44 @@ gg() {
       local dates
       dates=$(echo "$all_branches" | sed 's|^checkpoints/\([^/]*\)/.*|\1|' | awk '!seen[$0]++' | head -n "$n")
 
-      if [[ $interactive -eq 1 ]]; then
-        # Interactive mode
-        if ! command -v fzf >/dev/null 2>&1; then
-          echo "Error: fzf is required for interactive mode but is not installed." >&2
-          echo "Install with: brew install fzf" >&2
-          echo "" >&2
-          echo "Falling back to list mode:" >&2
-          # Fall through to non-interactive display, return 1
-        else
-          # Build fzf input: full-branch-name\tdate  display-name
-          local fzf_input=""
-          while IFS= read -r date; do
-            local date_display="${date:0:2}-${date:2:2}-${date:4:2}"
-            local date_branches
-            date_branches=$(echo "$all_branches" | grep "^checkpoints/${date}/" | head -n 3)
-            while IFS= read -r branch; do
-              # Strip checkpoints/YYMMDD/ prefix, split last /N into base - N
-              local rest="${branch#checkpoints/${date}/}"
-              local num="${rest##*/}"
-              local base="${rest%/*}"
-              local display_name="${base} - ${num}"
-              fzf_input+="${branch}"$'\t'"${date_display}  ${display_name}"$'\n'
-            done <<< "$date_branches"
-          done <<< "$dates"
+      if [[ $interactive -eq 1 ]] && command -v fzf >/dev/null 2>&1; then
+        # Interactive mode with fzf
+        local fzf_input=""
+        while IFS= read -r date; do
+          local date_display="${date:0:2}-${date:2:2}-${date:4:2}"
+          local date_branches
+          date_branches=$(echo "$all_branches" | grep "^checkpoints/${date}/" | head -n 3)
+          while IFS= read -r branch; do
+            local rest="${branch#checkpoints/${date}/}"
+            local num="${rest##*/}"
+            local base="${rest%/*}"
+            local display_name="${base} - ${num}"
+            fzf_input+="${branch}"$'\t'"${date_display}  ${display_name}"$'\n'
+          done <<< "$date_branches"
+        done <<< "$dates"
 
-          local selected
-          selected=$(printf '%s' "$fzf_input" | fzf --height=40% --reverse --border \
-            --header="Select checkpoint (Enter=checkout, Esc=cancel)" \
-            --bind="j:down,k:up" \
-            --delimiter=$'\t' --with-nth=2)
+        local selected
+        selected=$(printf '%s' "$fzf_input" | fzf --height=40% --reverse --border \
+          --header="Select checkpoint (Enter=checkout, Esc=cancel)" \
+          --bind="j:down,k:up" \
+          --delimiter=$'\t' --with-nth=2)
 
-          if [[ -n "$selected" ]]; then
-            local branch_name="${selected%%$'\t'*}"
-            gg co "$branch_name"
-          fi
-          return
+        if [[ -n "$selected" ]]; then
+          local branch_name="${selected%%$'\t'*}"
+          gg co "$branch_name"
         fi
+        return
       fi
 
-      # Non-interactive display (also used as fallback when fzf missing)
-      local fzf_missing=$interactive
+      if [[ $interactive -eq 1 ]]; then
+        # Interactive requested but fzf not available
+        echo "Error: fzf is required for interactive mode but is not installed." >&2
+        echo "Install with: brew install fzf" >&2
+        echo "" >&2
+        echo "Falling back to list mode:" >&2
+      fi
+
+      # Non-interactive display
       while IFS= read -r date; do
         local date_display="${date:0:2}-${date:2:2}-${date:4:2}"
         echo "── ${date_display} ──"
@@ -283,7 +280,7 @@ gg() {
         done <<< "$date_branches"
         echo ""
       done <<< "$dates"
-      return $fzf_missing
+      return $interactive
       ;;
     qq)
       git status | fpp -nfc
