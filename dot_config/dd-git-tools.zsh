@@ -27,6 +27,7 @@ typeset -a GG_CUSTOM_COMMANDS=(
   'checkpoints:list checkpoints'
   'qq:interactive file picker'
   'forcepull:fetch and hard reset to upstream'
+  'wt:delegate to worktrunk (wt)'
 )
 
 gg() {
@@ -281,6 +282,10 @@ gg() {
         echo ""
       done <<< "$dates"
       return $interactive
+      ;;
+    wt)
+      wt "$@"
+      return
       ;;
     qq)
       git status | fpp -nfc
