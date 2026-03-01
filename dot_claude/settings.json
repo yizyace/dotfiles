@@ -3,5 +3,17 @@
     "commit": "",
     "pr": ""
   },
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/notify-done.sh"
+          }
+        ]
+      }
+    ]
+  }
 }
